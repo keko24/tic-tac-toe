@@ -9,8 +9,45 @@
 
 .square {
 	font-size: 72px;
+	position: relative;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	border: 1px solid black;
+}
+
+div.strike-row, div.strike-column {
+  position: relative;
+}
+
+div.strike-row:before {
+  content: " ";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  border-bottom: 4px solid #111;
+  width: 100%;
+}
+
+div.strike-column:before {
+  content: " ";
+  position: absolute;
+  border-left: 4px solid #111;
+  height: 100%;
+}
+
+div.strike-main:before {
+  content: " ";
+  position: absolute;
+  border-left: 4px solid #111;
+  height: 143%;
+  transform: rotate(-45deg);
+}
+
+div.strike-anti:before {
+  content: " ";
+  position: absolute;
+  border-left: 4px solid #111;
+  height: 143%;
+  transform: rotate(45deg);
 }

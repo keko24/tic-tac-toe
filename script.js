@@ -20,21 +20,26 @@ const GameBoard = (function() {
 				if (row !== gameBoard[i][j] || !gameBoard[i][j])
 					rowWinner = false;
 			}
-			if (columnWinner === true || rowWinner === true)
+			if (columnWinner === true)
 			{
-				console.log(`Winner on ${i}`);
-				return true;
+				console.log(`Winner on column ${i}`);
+				return `j=${i}`;
+			}
+			else if (rowWinner === true)
+			{
+				console.log(`Winner on row ${i}`);
+				return `i=${i}`;
 			}
 		}
 		if (gameBoard[0][0] === gameBoard[1][1] && gameBoard[0][0] === gameBoard[2][2] && gameBoard[0][0] && gameBoard[1][1] && gameBoard[2][2])
 		{
 			console.log(`Winner on main diagonal`);
-			return true;
+			return 'main';
 		}
 		if (gameBoard[0][2] === gameBoard[1][1] && gameBoard[0][2] === gameBoard[2][0] && gameBoard[0][2] && gameBoard[1][1] && gameBoard[2][0])
 		{
 			console.log('Winner on not main diagonal');
-			return true;
+			return 'anti';
 		}
 		return false;
 	}
@@ -53,7 +58,7 @@ const displayController = (function() {
 				const square = document.createElement('div');
 				square.classList.add(`i=${i}`, `j=${j}`, 'square');
 				gameBoard.appendChild(square);
-				square.addEventListener('click', markSquare);
+				square.addEventListener('click', markSquare, {once: true});
 			}
 		}
 	}
@@ -65,14 +70,53 @@ const displayController = (function() {
 			gameBoard.removeChild(gameBoard.lastElementChild);
 		}
 	}
+	const stopMarking = function() {
+		let square = gameBoard.lastElementChild;
+		for (let i = 0; i < 9; i++)
+		{
+			square.removeEventListener('click', markSquare);
+			square = square.previousSibling;
+		}
+	}
+	const strike = function(square, path) {
+		if (path === 'i')
+			square.classList.add('strike-row');
+		else if (path === 'j')
+			square.classList.add('strike-column');
+		else if (path === 'main')
+			square.classList.add('strike-main');
+		else
+			square.classList.add('strike-anti');
+
+	}
 	const markSquare = function(e) {
-		if (e.target.textContent !== "")
-			return;
 		const sign = ticTacToe.checkTurn();
 		GameBoard.mark(e.target.classList[0][2], e.target.classList[1][2], sign);
 		e.target.textContent = sign;
-		if (GameBoard.checkWinner())
+		const line = GameBoard.checkWinner();
+		if (line)
+		{
+			if (line[0] === 'j' || line[0] === 'i')
+			{
+				const squares = gameBoard.getElementsByClassName(line);
+				for (let i = 0; i < 3; i++)
+					strike(squares[i], line[0]);
+			}
+			else if (line === 'main')
+			{
+				const squares = [gameBoard.getElementsByClassName('i=0 j=0'), gameBoard.getElementsByClassName('i=1 j=1'), gameBoard.getElementsByClassName('i=2 j=2')];
+				for (let i = 0; i < 3; i++)
+					strike(squares[i][0], line);
+			}
+			else
+			{
+				const squares = [gameBoard.getElementsByClassName('i=0 j=2'), gameBoard.getElementsByClassName('i=1 j=1'), gameBoard.getElementsByClassName('i=2 j=0')];
+				for (let i = 0; i < 3; i++)
+					strike(squares[i][0], line);
+			}
 			alert(`${sign} is the winner!!!`);
+			stopMarking();
+		}
 	}
 	return {displayScreen};
 })();
@@ -92,13 +136,13 @@ const ticTacToe = (function() {
 		{
 			player1.myTurn = false;
 			player2.myTurn = true;
-			return player1.playerSign;
+			return player1.sign;
 		}
 		else
 		{
 			player1.myTurn = true;
 			player2.myTurn = false;
-			return player2.playerSign;
+			return player2.sign;
 		}
 	}
 	const pickSign = function() {
@@ -108,10 +152,10 @@ const ticTacToe = (function() {
 })();
 
 const player = function(turn) {
-	let playerSign = turn ? 'X' : 'O';
+	let sign = turn ? 'X' : 'O';
 	let myTurn = turn;
 	let points = 0;
-	return {playerSign, myTurn, points};
+	return {sign, myTurn, points};
 };
 
 ticTacToe.startNewGame();
