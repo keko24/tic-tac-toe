@@ -47,7 +47,9 @@ const GameBoard = (function() {
 })();
 
 const displayController = (function() {
-	const gameBoard = document.querySelector('#game-board');
+	const container = document.querySelector('#container');
+	const gameBoard = container.querySelector('#game-board');
+	const restartButton = container.querySelector('#restart-button');
 	const displayScreen = function() {
 		GameBoard.newGame();
 		cleanScreen();
@@ -63,7 +65,7 @@ const displayController = (function() {
 		}
 	}
 	const cleanScreen = function() {
-		if (gameBoard.innerHTML.length <= 3)
+		if (gameBoard.innerHTML.length <= 5)
 			return;
 		for (let i = 0; i < 9; i++)
 		{
@@ -114,12 +116,12 @@ const displayController = (function() {
 		const newGameBtn = document.createElement('button');
 		newGameBtn.textContent = "New Game";
 		newGameBtn.setAttribute('id', 'new-game-button');
-		document.body.appendChild(newGameBtn);
+		container.appendChild(newGameBtn);
 		newGameBtn.addEventListener('click', newGame);
 	}
 	const newGame = function(e) {
 		ticTacToe.startNewGame();
-		document.body.removeChild(e.target);
+		container.removeChild(e.target);
 	}
 	const markSquare = function(e) {
 		const sign = ticTacToe.checkTurn();
@@ -139,6 +141,10 @@ const displayController = (function() {
 		alert(`${sign} is the winner!!!`);
 		stopMarking();
 	}
+	const restartGame = function(e) {
+		ticTacToe.startNewGame();
+	}
+	restartButton.addEventListener('click', restartGame);
 	return {displayScreen};
 })();
 
