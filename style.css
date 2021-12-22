@@ -51,3 +51,9 @@ div.strike-anti:before {
   height: 143%;
   transform: rotate(45deg);
 }
+
+#new-game-button {
+	padding: 10px 20px 10px 20px;
+	border: 1px solid black;
+	border-radius: 4px;
+}
