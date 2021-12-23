@@ -55,15 +55,20 @@ const displayController = (function() {
 	player1Score.setAttribute('id', 'player-one-score');
 	const player2Score = document.createElement('p');
 	player2Score.setAttribute('id', 'player-two-score');
+	const playerTurn = document.createElement('p');
+	playerTurn.setAttribute('id', 'player-turn');
 	scoreBoard.appendChild(player1Score);
+	scoreBoard.appendChild(playerTurn);
 	scoreBoard.appendChild(player2Score);
 
 	const startNewGame = function(player1, player2) {
 		player1Score.innerHTML = `${player1.getName()}:<br>${player2.getScore()}`;
+		playerTurn.textContent = `${player1.getMyTurn() ? player1.getName() : player2.getName()} is first to play!`;
 		player2Score.innerHTML = `${player2.getName()}:<br>${player2.getScore()}`;
 		displayScreen();
 	}
 	const startNewRound = function(player1, player2) {
+		playerTurn.textContent = `${player1.getMyTurn() ? player1.getName() : player2.getName()} is first to play!`;
 		displayScreen();
 	}
 	const displayScreen = function() {
@@ -107,10 +112,7 @@ const displayController = (function() {
 			square.classList.add('strike-anti');
 	}
 	const finishGame = function(line) {
-		if (line === 'draw')
-		{
-		}
-		else if (line[0] === 'j' || line[0] === 'i')
+		if (line[0] === 'j' || line[0] === 'i')
 		{
 			const squares = gameBoard.getElementsByClassName(line);
 			for (let i = 0; i < 3; i++)
@@ -122,7 +124,7 @@ const displayController = (function() {
 			for (let i = 0; i < 3; i++)
 				strike(squares[i][0], line);
 		}
-		else
+		else if (line === 'anti')
 		{
 			const squares = [gameBoard.getElementsByClassName('i=0 j=2'), gameBoard.getElementsByClassName('i=1 j=1'), gameBoard.getElementsByClassName('i=2 j=0')];
 			for (let i = 0; i < 3; i++)
@@ -131,39 +133,43 @@ const displayController = (function() {
 		const newGameBtn = document.createElement('button');
 		newGameBtn.textContent = "New Game";
 		newGameBtn.setAttribute('id', 'new-game-button');
-		container.appendChild(newGameBtn);
+		container.lastElementChild.lastElementChild.appendChild(newGameBtn);
 		newGameBtn.addEventListener('click', newGame);
 	}
 	const newGame = function(e) {
 		ticTacToe.startNewRound();
-		container.removeChild(e.target);
+		container.lastElementChild.lastElementChild.removeChild(e.target);
 	}
 	const markSquare = function(e) {
-		const sign = ticTacToe.checkTurn();
-		GameBoard.mark(e.target.classList[0][2], e.target.classList[1][2], sign);
-		e.target.textContent = sign;
-		if (ticTacToe.getTurn() === 10)
-		{
-			finishGame('draw');
-			alert('Draw!!');
-			stopMarking();
-			return;
-		}
+		const nameAndSign = ticTacToe.checkTurn();
+		GameBoard.mark(e.target.classList[0][2], e.target.classList[1][2], nameAndSign[1]);
+		e.target.textContent = nameAndSign[1];
 		let finish = GameBoard.checkWinner();
 		if (!finish)
+		{
+			if (ticTacToe.getTurn() === 10)
+			{	
+				finishGame('draw');
+				playerTurn.textContent = 'Draw!!!';
+				stopMarking();
+				return;
+			}
+			playerTurn.textContent = `It's ${nameAndSign[0]}'s turn!`;
 			return;
+		}
 		finishGame(finish);
 		updateScore();
-		alert(`${sign} is the winner!!!`);
 		stopMarking();
 	}
 	const updateScore = function() {
 		const players = ticTacToe.addScoreToWinner();
 		player1Score.innerHTML = `${players[0].getName()}:<br>${players[0].getScore()}`;
 		player2Score.innerHTML = `${players[1].getName()}:<br>${players[1].getScore()}`;
+		playerTurn.textContent = `${players[0].getMyTurn() ? players[1].getName() : players[0].getName()} is the winner!!!`;
 	}
 	const restartGame = function(e) {
 		ticTacToe.startNewGame();
+		container.lastElementChild.lastElementChild.removeChild(container.lastElementChild.lastElementChild.firstElementChild);
 	}
 	restartButton.addEventListener('click', restartGame);
 	return {startNewGame, startNewRound};
@@ -204,13 +210,13 @@ const ticTacToe = (function() {
 		{
 			player1.setMyTurn(false);
 			player2.setMyTurn(true);
-			return player1.getSign();
+			return [player2.getName(), player1.getSign()];
 		}
 		else
 		{
 			player1.setMyTurn(true);
 			player2.setMyTurn(false);
-			return player2.getSign();
+			return [player1.getName(), player2.getSign()];
 		}
 	}
 	const addScoreToWinner = function() {
@@ -230,7 +236,10 @@ const ticTacToe = (function() {
 	const pickSign = function() {
 		return Math.floor(Math.random() * 2);
 	}
-	return {startNewGame, startNewRound, addScoreToWinner, checkTurn, getTurn};
+	const getPlayers = function() {
+		return [player1, player2];
+	}
+	return {startNewGame, startNewRound, addScoreToWinner, checkTurn, getTurn, getPlayers};
 })();
 
 const player = function(name, turn) {
