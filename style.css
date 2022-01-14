@@ -9,7 +9,7 @@ body {
 	grid-template-rows: repeat(3, 1fr);
 	grid-template-columns: 1fr;
 	width: 800px;
-	height: 600px;
+	height: 700px;
 	border-radius: 16px;
 	background-color: rgb(193, 225, 193);
 }
@@ -31,6 +31,7 @@ body {
 }
 
 #buttons {
+	margin-bottom: 25px;
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
 	grid-template-rows: 1fr;
@@ -131,17 +132,17 @@ div.strike-anti:before {
   transform: rotate(45deg);
 }
 
-#new-button-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
+#choose-player {
+	display: grid;
+	grid-template-rows: 1fr;
+	grid-template-columns: repeat(2, 1fr);
 }
 
 #new-game-button {
 	grid-area: new-game-button;
 }
 
-#restart-button-container {
+#vs-player-container, #vs-computer-container, #new-button-container, #restart-button-container {
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -151,7 +152,7 @@ div.strike-anti:before {
 	grid-area: restart-game-button:
 }
 
-#restart-button, #new-game-button {
+#vs-player, #vs-computer, #restart-button, #new-game-button {
 	background-color: rgb(225,193,225);
 	font-size: 32px;
 	height: 100px;
@@ -161,6 +162,6 @@ div.strike-anti:before {
 	border-radius: 8px;
 }
 
-#restart-button:hover, #new-game-button:hover {
+#vs-player:hover, #vs-computer:hover, #restart-button:hover, #new-game-button:hover {
 	background-color: rgb(205,173,205);
 }

@@ -1,7 +1,10 @@
+const vsPlayerButton = document.querySelector('#vs-player');
+const vsComputerButton = document.querySelector('#vs-computer');
+
 const GameBoard = (function() {
 	let gameBoard = [[], [], []];
 	const newGame = function() {
-		gameBoard = [[], [], []];
+		gameBoard = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
 	}
 	const mark = function(i, j, sign) {
 		gameBoard[i][j] = sign;
@@ -22,28 +25,27 @@ const GameBoard = (function() {
 			}
 			if (columnWinner === true)
 			{
-				console.log(`Winner on column ${i}`);
 				return `j=${i}`;
 			}
 			else if (rowWinner === true)
 			{
-				console.log(`Winner on row ${i}`);
 				return `i=${i}`;
 			}
 		}
 		if (gameBoard[0][0] === gameBoard[1][1] && gameBoard[0][0] === gameBoard[2][2] && gameBoard[0][0] && gameBoard[1][1] && gameBoard[2][2])
 		{
-			console.log(`Winner on main diagonal`);
 			return 'main';
 		}
 		if (gameBoard[0][2] === gameBoard[1][1] && gameBoard[0][2] === gameBoard[2][0] && gameBoard[0][2] && gameBoard[1][1] && gameBoard[2][0])
 		{
-			console.log('Winner on not main diagonal');
 			return 'anti';
 		}
 		return false;
 	}
-	return {newGame, mark, checkWinner};
+	const getGameBoardCopy = function() {
+		return gameBoard.map(inner => inner.slice());
+	}
+	return {newGame, mark, checkWinner, getGameBoardCopy};
 })();
 
 const displayController = (function() {
@@ -60,11 +62,14 @@ const displayController = (function() {
 	scoreBoard.appendChild(player1Score);
 	scoreBoard.appendChild(playerTurn);
 	scoreBoard.appendChild(player2Score);
+	let bot;
+	let lockBoard = false;
 
-	const startNewGame = function(player1, player2) {
+	const startNewGame = function(player1, player2, playerOrComputer) {
 		player1Score.innerHTML = `${player1.getName()}:<br>${player2.getScore()}`;
 		playerTurn.textContent = `${player1.getMyTurn() ? player1.getName() : player2.getName()} is first to play!`;
 		player2Score.innerHTML = `${player2.getName()}:<br>${player2.getScore()}`;
+		bot = playerOrComputer;
 		displayScreen();
 	}
 	const startNewRound = function(player1, player2) {
@@ -83,6 +88,12 @@ const displayController = (function() {
 				gameBoard.appendChild(square);
 				square.addEventListener('click', markSquare, {once: true});
 			}
+		}
+		if (bot && computer.getMyTurn())
+		{
+			lockBoard = true;
+			setTimeout(computer.playMove, 2000);
+			setTimeout(setLock, 1900);
 		}
 	}
 	const cleanScreen = function() {
@@ -140,10 +151,24 @@ const displayController = (function() {
 		ticTacToe.startNewRound();
 		container.lastElementChild.lastElementChild.removeChild(e.target);
 	}
+	const setLock = function() {
+		lockBoard = false;
+	}
 	const markSquare = function(e) {
+		if (lockBoard)
+			return;
 		const nameAndSign = ticTacToe.checkTurn();
-		GameBoard.mark(e.target.classList[0][2], e.target.classList[1][2], nameAndSign[1]);
-		e.target.textContent = nameAndSign[1];
+		if (e.length === 7)
+		{
+			GameBoard.mark(e[2], e[6], nameAndSign[1]);
+			document.getElementsByClassName(e)[0].textContent = nameAndSign[1];		
+			document.getElementsByClassName(e)[0].removeEventListener('click', markSquare);		
+		}
+		else
+		{
+			GameBoard.mark(e.target.classList[0][2], e.target.classList[1][2], nameAndSign[1]);
+			e.target.textContent = nameAndSign[1];
+		}
 		let finish = GameBoard.checkWinner();
 		if (!finish)
 		{
@@ -155,6 +180,12 @@ const displayController = (function() {
 				return;
 			}
 			playerTurn.textContent = `It's ${nameAndSign[0]}'s turn!`;
+			if (bot && computer.getMyTurn())
+			{
+				lockBoard = true;
+				setTimeout(computer.playMove, 1000);
+				setTimeout(setLock, 900);
+			}
 			return;
 		}
 		finishGame(finish);
@@ -168,23 +199,42 @@ const displayController = (function() {
 		playerTurn.textContent = `${players[0].getMyTurn() ? players[1].getName() : players[0].getName()} is the winner!!!`;
 	}
 	const restartGame = function(e) {
-		ticTacToe.startNewGame();
-		container.lastElementChild.lastElementChild.removeChild(container.lastElementChild.lastElementChild.firstElementChild);
+		ticTacToe.startNewGame(e);
+		if (container.lastElementChild.lastElementChild.firstElementChild)
+			container.lastElementChild.lastElementChild.removeChild(container.lastElementChild.lastElementChild.firstElementChild);
 	}
 	restartButton.addEventListener('click', restartGame);
-	return {startNewGame, startNewRound};
+	vsPlayerButton.addEventListener('click', restartGame);
+	vsComputerButton.addEventListener('click', restartGame);
+	return {startNewGame, startNewRound, markSquare};
 })();
 
 const ticTacToe = (function() {
 	let player1, player2, turn;
-	const startNewGame = function() {
+	const startNewGame = function(playerOrComputer) {
+		if (playerOrComputer.target.id === 'vs-player')
+			playerOrComputer = 0;
+		else
+			playerOrComputer = 1;
 		turn = 1;
 		const sign = pickSign();
-		const name1 = prompt('Enter your name Player 1:');
-		const name2 = prompt('Enter your name Player 2:');
-		player1 = player(name1, sign);
-		player2 = player(name2, !sign);
-		displayController.startNewGame(player1, player2);
+		if (!playerOrComputer)
+		{
+			const name1 = prompt('Enter your name Player 1:');
+			const name2 = prompt('Enter your name Player 2:');
+			player1 = player(name1, sign);
+			player2 = player(name2, !sign);
+		}
+		else
+		{
+			const name = prompt('Enter your name:');
+			player1 = player(name, !sign);
+			computer.setSign(sign);
+			computer.setMyTurn(sign);
+			computer.resetScore();
+			player2 = computer;
+		}
+		displayController.startNewGame(player1, player2, playerOrComputer);
 	}
 	const startNewRound = function() {
 		turn = 1;
@@ -272,7 +322,161 @@ const player = function(name, turn) {
 };
 
 const computer = (function() {
-
+	let myName = 'GigaChad', sign, playerSign, myTurn, score = 0;
+	const getScore = function() {
+		return score;
+	}
+	const addScore = function() {
+		score++;
+	}
+	const resetScore = function() {
+		score = 0;
+	}
+	const setSign = function(s) {
+		if (s)
+		{
+			sign = 'X';
+			playerSign = 'O';
+		}
+		else
+		{
+			sign = 'O';
+			playerSign = 'X';
+		}
+	}
+	const getSign = function() {
+		return sign;
+	}
+	const setMyTurn = function(turn) {
+		myTurn = turn;
+	}
+	const getMyTurn = function() {
+		return myTurn;
+	}
+	const getName = function() {
+		return myName;
+	}
+	const playMove = function() {
+		const boardCopy = GameBoard.getGameBoardCopy();
+		displayController.markSquare(findBestMove(boardCopy, ticTacToe.getTurn()));	
+	}
+	const checkWin = function(board) {	
+		for (let i = 0; i < 3; i++)
+		{
+			if (board[i][0] === board[i][1] && board[i][1] === board[i][2])
+			{
+				if (board[i][0] === sign)
+					return 10;
+				else if (board[i][0] === playerSign)
+					return -10;
+			}
+		}
+		for (let i = 0; i < 3; i++)
+		{
+			if (board[0][i] === board[1][i] && board[1][i] === board[2][i])
+			{
+				if (board[0][i] === sign)
+					return 10;
+				else if (board[0][i] === playerSign)
+					return -10;
+			}
+		}
+		for (let i = 0; i < 3; i++)
+		{
+			if (board[i][0] === board[i][1] && board[i][1] === board[i][2])
+			{
+				if (board[i][0] === sign)
+					return 10;
+				else if (board[i][0] === playerSign)
+					return -10;
+			}
+		}
+                if (board[0][0] === board[1][1] && board[1][1] === board[2][2])
+                {
+			if (board[1][1] === sign)
+				return 10;
+			else if (board[1][1] === playerSign)
+				return -10;
+                }
+                if (board[0][2] === board[1][1] && board[1][1] === board[2][0])
+                {
+			if (board[1][1] === sign)
+				return 10;
+			else if (board[1][1] === playerSign)
+				return -10;
+                }
+                return 0;
+        }
+	const isMovesLeft = function(board) {
+    		for (let i = 0; i < 3; i++)
+        		for (let j = 0; j < 3; j++)
+            			if (!board[i][j])
+        		        	return true;
+    		return false;
+	}	
+	const miniMax = function(board, depth, maximizingPlayer) {
+		let score = checkWin(board);
+		if (score === 10)
+			return score - depth;
+		if (score === -10)
+			return score + depth;
+		if (!isMovesLeft(board))
+			return 0;
+		if (maximizingPlayer)
+		{
+			let bestVal = -Infinity;
+			for (let i = 0; i < 3; i++)
+			{
+				for (let j = 0; j < 3; j++)
+				{
+					if (board[i][j])
+						continue;
+					board[i][j] = sign;
+					value = miniMax(board, depth + 1, !maximizingPlayer);
+					bestVal = Math.max(bestVal, value);
+					board[i][j] = '';
+				}
+			}
+			return bestVal;
+		}	
+		else
+		{
+			let bestVal = Infinity;
+			for (let i = 0; i < 3; i++)
+			{
+				for (let j = 0; j < 3; j++)
+				{
+					if (board[i][j])
+						continue;
+					board[i][j] = playerSign;
+					value = miniMax(board, depth + 1, !maximizingPlayer);
+					bestVal = Math.min(bestVal, value);
+					board[i][j] = '';
+				}
+			}
+			return bestVal;
+		}
+	}
+	const findBestMove = function(board, turn) {
+		bestMove = null;
+		bestMoveVal = -Infinity;
+		for (let i = 0; i < 3; i++)
+		{
+			for (let j = 0; j < 3; j++)
+			{
+				if (board[i][j])
+					continue;
+				board[i][j] = sign;
+				moveVal = miniMax(board, 0, false);
+				board[i][j] = 0;
+				if (bestMoveVal < moveVal)
+				{
+					bestMoveVal = moveVal;
+					bestMove = `i=${i} j=${j}`;
+				}
+			}
+		}
+		return bestMove;
+	}
+	return {playMove, getScore, addScore, resetScore, getName, getSign, setSign, getMyTurn, setMyTurn};
 })();
-
-ticTacToe.startNewGame();
